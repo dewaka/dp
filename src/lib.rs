@@ -2,6 +2,7 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use regex::Captures;
 use regex::Regex;
 use std::collections::HashSet;
+use std::path::Path;
 
 type DpDateTime = NaiveDateTime;
 
@@ -17,38 +18,19 @@ fn local_date(year: i32, month: u32, date: u32) -> DpDateTime {
 }
 
 /// Abstraction over file system providing following operations
-/// - Check if a file exist
-/// - Copy an existing file with a new name
 pub trait Vfs {
-    fn exists(&self, file: &str) -> bool;
-    fn copy(&mut self, file: &str, new_file: &str) -> bool;
-}
+    /// Checks if given file exists on the underlying file system
+    fn exists(&self, path: &str) -> bool;
 
-struct TestFileSystem {
-    files: HashSet<String>,
-}
+    /// Copies a file to a new path. Returns true if operations is successful
+    /// and false if it fails.
+    fn copy(&mut self, path: &str, new_path: &str) -> bool;
 
-impl TestFileSystem {
-    fn new(files: Vec<String>) -> Self {
-        Self {
-            files: files.into_iter().collect(),
-        }
-    }
+    /// File name portion of a given path
+    fn filename(&self, path: &str) -> String;
 
-    fn print_files(&self) {
-        println!("Files: {:?}", self.files);
-    }
-}
-
-impl Vfs for TestFileSystem {
-    fn exists(&self, file: &str) -> bool {
-        self.files.contains(file)
-    }
-
-    fn copy(&mut self, _file: &str, new_file: &str) -> bool {
-        self.files.insert(new_file.to_string());
-        true
-    }
+    /// Parent portion of a given path
+    fn parent(&self, path: &str) -> String;
 }
 
 /// Rule for renaming a file
@@ -136,8 +118,89 @@ impl<'a> Rule for IncrementRule<'a> {
     }
 }
 
+/// Local file system Vfs
+struct LocalFileSystem {}
+
+impl LocalFileSystem {
+    pub fn new() -> Self { Self {} }
+}
+
+impl Vfs for LocalFileSystem {
+    fn exists(&self, path: &str) -> bool {
+        let path = Path::new(path);
+        path.exists()
+    }
+
+    fn copy(&mut self, path: &str, new_path: &str) -> bool {
+        match std::fs::copy(path, new_path) {
+            Ok(_) => true,
+            Err(_) => false,
+        }
+    }
+
+    fn filename(&self, path: &str) -> String {
+        let path = Path::new(path);
+        path.file_name().unwrap().to_str().unwrap().to_string()
+    }
+
+    fn parent(&self, path: &str) -> String {
+        let path = Path::new(path);
+        path.parent().unwrap().to_str().unwrap().to_string()
+    }
+}
+
 mod test {
     use super::*;
+    use chrono::Local;
+
+    struct TestFileSystem {
+        files: HashSet<String>,
+    }
+
+    impl TestFileSystem {
+        fn new(files: Vec<String>) -> Self {
+            Self {
+                files: files.into_iter().collect(),
+            }
+        }
+
+        fn empty() -> Self {
+            Self::new(vec![])
+        }
+
+        fn print_files(&self) {
+            println!("Files: {:?}", self.files);
+        }
+    }
+
+    impl Vfs for TestFileSystem {
+        fn exists(&self, path: &str) -> bool {
+            self.files.contains(path)
+        }
+
+        fn copy(&mut self, _path: &str, new_path: &str) -> bool {
+            self.files.insert(new_path.to_string());
+            true
+        }
+
+        fn filename(&self, path: &str) -> String {
+            if let Some(pos) = path.rfind('/') {
+                let name = &path[pos + 1..];
+                name.to_string()
+            } else {
+                path.to_string()
+            }
+        }
+
+        fn parent(&self, path: &str) -> String {
+            if let Some(pos) = path.rfind('/') {
+                let name = &path[..pos];
+                name.to_string()
+            } else {
+                format!("")
+            }
+        }
+    }
 
     fn test_local_date() -> DpDateTime {
         local_date(2019, 11, 10)
@@ -178,5 +241,34 @@ mod test {
             date_rule(r"\d{2}", "%d").apply("hello-23.org"),
             Some("hello-10.org".to_string())
         );
+
+        assert_eq!(
+            date_rule(r"\d{2}-\d{2}", "%m-%d").apply("hello-there.org"),
+            None
+        );
+        assert_eq!(date_rule(r"\d{2}", "%d").apply("hello-XY.org"), None);
     }
+
+    #[test]
+    fn test_filename() {
+        let vfs = TestFileSystem::empty();
+
+        assert_eq!(vfs.filename("/foo/bar/hello.txt"), "hello.txt");
+        assert_eq!(vfs.filename("hello.txt"), "hello.txt");
+    }
+
+    #[test]
+    fn test_parent() {
+        let vfs = TestFileSystem::empty();
+        assert_eq!(vfs.parent("/foo/bar/hello.txt"), "/foo/bar");
+        assert_eq!(vfs.parent("hello.txt"), "");
+    }
+
+    #[test]
+    fn test_local_file_system() {
+        let lfs = LocalFileSystem::new();
+        assert_eq!(lfs.parent("/hello/there.txt"), "/hello");
+        assert_eq!(lfs.filename("/hello/there.txt"), "there.txt");
+    }
+
 }
