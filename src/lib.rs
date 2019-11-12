@@ -45,11 +45,11 @@ pub struct Duplicator<'a> {
 }
 
 impl<'a> Duplicator<'a> {
-    fn new(rules: Vec<&'a dyn Rule>, vfs: &'a mut dyn Vfs) -> Self {
+    pub fn new(rules: Vec<&'a dyn Rule>, vfs: &'a mut dyn Vfs) -> Self {
         Self { rules, vfs }
     }
 
-    fn duplicate(&mut self, file: &str) -> bool {
+    pub fn duplicate(&mut self, file: &str) -> bool {
         for rule in &self.rules {
             if let Some(ref renamed) = rule.apply(file) {
                 if self.vfs.exists(&renamed) {
@@ -65,14 +65,14 @@ impl<'a> Duplicator<'a> {
 }
 
 /// A rule for renaming files based on dates
-struct DateRule {
+pub struct DateRule {
     regex: Regex,
     date_fmt: String,
     now: DpDateTime,
 }
 
 impl DateRule {
-    fn new(regex: Regex, date_fmt: &str, now: DpDateTime) -> Self {
+    pub fn new(regex: Regex, date_fmt: &str, now: DpDateTime) -> Self {
         Self {
             regex,
             date_fmt: date_fmt.to_string(),
@@ -80,13 +80,13 @@ impl DateRule {
         }
     }
 
-    fn compile(pattern: &str, date_fmt: &str, now: DpDateTime) -> Self {
+    pub fn compile(pattern: &str, date_fmt: &str, now: DpDateTime) -> Self {
         let regex_str = format!("(.*)({})(.*)", pattern);
         let regex: Regex = Regex::new(&regex_str).unwrap();
         Self::new(regex, date_fmt, now)
     }
 
-    fn compile_now(pattern: &str, date_fmt: &str) -> Self {
+    pub fn compile_now(pattern: &str, date_fmt: &str) -> Self {
         Self::compile(pattern, date_fmt, current_local_date_time())
     }
 }
@@ -119,10 +119,12 @@ impl<'a> Rule for IncrementRule<'a> {
 }
 
 /// Local file system Vfs
-struct LocalFileSystem {}
+pub struct LocalFileSystem {}
 
 impl LocalFileSystem {
-    pub fn new() -> Self { Self {} }
+    pub fn new() -> Self {
+        Self {}
+    }
 }
 
 impl Vfs for LocalFileSystem {
@@ -270,5 +272,4 @@ mod test {
         assert_eq!(lfs.parent("/hello/there.txt"), "/hello");
         assert_eq!(lfs.filename("/hello/there.txt"), "there.txt");
     }
-
 }
