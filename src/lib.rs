@@ -108,13 +108,34 @@ impl Rule for DateRule {
 
 /// IncrementRule for rewriting a file
 /// - rename foo.txt to foo1.txt
-struct IncrementRule<'a> {
-    vfs: &'a mut dyn Vfs,
+pub struct IncrementRule {}
+
+impl IncrementRule {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    fn increment(nstr: &str) -> i32 {
+        let num: i32 = nstr.parse().unwrap();
+        num + 1
+    }
 }
 
-impl<'a> Rule for IncrementRule<'a> {
+impl Rule for IncrementRule {
     fn apply(&self, input: &str) -> Option<String> {
-        unimplemented!()
+        let regex = Regex::new(r"(.*)(\d+)(.*)").unwrap();
+
+        if regex.is_match(input) {
+            Some(
+                regex
+                    .replace_all(input, |caps: &Captures| {
+                        format!("{}{}{}", &caps[1], Self::increment(&caps[2]), &caps[3])
+                    })
+                    .to_string(),
+            )
+        } else {
+            None
+        }
     }
 }
 
@@ -151,6 +172,7 @@ impl Vfs for LocalFileSystem {
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
     use chrono::Local;
@@ -271,5 +293,15 @@ mod test {
         let lfs = LocalFileSystem::new();
         assert_eq!(lfs.parent("/hello/there.txt"), "/hello");
         assert_eq!(lfs.filename("/hello/there.txt"), "there.txt");
+    }
+
+    #[test]
+    fn test_increment_rule() {
+        let r1 = IncrementRule::new();
+
+        assert_eq!(r1.apply("hello.txt"), None);
+        assert_eq!(r1.apply(""), None);
+        assert_eq!(r1.apply("hello3.txt"), Some("hello4.txt".to_string()));
+        assert_eq!(r1.apply("hello7"), Some("hello8".to_string()));
     }
 }

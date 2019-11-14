@@ -1,6 +1,6 @@
 mod lib;
 
-use lib::{DateRule, Duplicator, LocalFileSystem, Rule};
+use lib::{DateRule, Duplicator, IncrementRule, LocalFileSystem, Rule};
 
 fn duplicate_files(files: &[String]) {
     // Dash (-) separated dates
@@ -10,7 +10,10 @@ fn duplicate_files(files: &[String]) {
     let r3 = DateRule::compile_now(r"\d{2}_\d{2}", "%m_%d");
     let r4 = DateRule::compile_now(r"\d{4}_\d{2}_\d{2}", "%y_%m_%d");
 
-    let rules: Vec<&dyn Rule> = vec![&r1, &r2, &r3, &r4];
+    // Increment rule
+    let inc_rule = IncrementRule::new();
+
+    let rules: Vec<&dyn Rule> = vec![&r1, &r2, &r3, &r4, &inc_rule];
     let mut fs = LocalFileSystem::new();
 
     let mut duplicator = Duplicator::new(rules, &mut fs);
