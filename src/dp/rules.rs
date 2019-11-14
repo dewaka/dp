@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{NaiveDateTime, Utc};
 use regex::Captures;
 use regex::Regex;
 
@@ -6,13 +6,6 @@ type DpDateTime = NaiveDateTime;
 
 fn current_local_date_time() -> DpDateTime {
     Utc::now().naive_utc()
-}
-
-fn local_date(year: i32, month: u32, date: u32) -> DpDateTime {
-    NaiveDateTime::new(
-        NaiveDate::from_ymd(year, month, date),
-        NaiveTime::from_hms_milli(0, 0, 0, 0),
-    )
 }
 
 pub trait Rule {
@@ -96,7 +89,16 @@ impl Rule for IncrementRule {
 
 #[cfg(test)]
 pub mod test {
+    use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+
     use super::*;
+
+    fn local_date(year: i32, month: u32, date: u32) -> DpDateTime {
+        NaiveDateTime::new(
+            NaiveDate::from_ymd(year, month, date),
+            NaiveTime::from_hms_milli(0, 0, 0, 0),
+        )
+    }
 
     pub fn date_rule(regex: &str, date_fmt: &str) -> DateRule {
         DateRule::compile(regex, date_fmt, test_local_date())

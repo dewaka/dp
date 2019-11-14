@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::path::Path;
 
 /// Abstraction over file system providing following operations
@@ -33,10 +32,7 @@ impl Vfs for LocalFileSystem {
     }
 
     fn copy(&mut self, path: &str, new_path: &str) -> bool {
-        match std::fs::copy(path, new_path) {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+        std::fs::copy(path, new_path).is_ok()
     }
 
     fn filename(&self, path: &str) -> String {
@@ -53,6 +49,7 @@ impl Vfs for LocalFileSystem {
 #[cfg(test)]
 pub mod test {
     use super::*;
+    use std::collections::HashSet;
 
     pub struct TestFileSystem {
         files: HashSet<String>,
@@ -67,10 +64,6 @@ pub mod test {
 
         pub fn empty() -> Self {
             Self::new(vec![])
-        }
-
-        fn get_files(&self) -> Vec<String> {
-            self.files.iter().map(|s| s.clone()).collect()
         }
     }
 

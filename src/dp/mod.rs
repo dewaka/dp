@@ -9,18 +9,27 @@ use vfs::Vfs;
 pub struct Duplicator {
     rules: Vec<Box<dyn Rule>>,
     vfs: Box<dyn Vfs>,
+    fallthrough: bool,
 }
 
 impl Duplicator {
     pub fn new(rules: Vec<Box<dyn Rule>>, vfs: Box<dyn Vfs>) -> Self {
-        Self { rules, vfs }
+        Self {
+            rules,
+            vfs,
+            fallthrough: false,
+        }
     }
 
     pub fn duplicate(&mut self, file: &str) -> bool {
         for rule in &self.rules {
             if let Some(ref renamed) = rule.apply(file) {
                 if self.vfs.exists(&renamed) {
-                    continue;
+                    if self.fallthrough {
+                        continue;
+                    } else {
+                        break;
+                    }
                 } else {
                     return self.vfs.copy(file, renamed);
                 }
@@ -53,7 +62,7 @@ mod test {
         assert!(duplicator.duplicate("meeting-23.org"));
 
         // Now same calls should fail
-        //        assert_eq!(duplicator.duplicate("hello-10-23.org"), false);
-        //        assert!(!duplicator.duplicate("meeting-23.org"));
+        assert!(!duplicator.duplicate("hello-10-23.org"));
+        assert!(!duplicator.duplicate("meeting-23.org"));
     }
 }
