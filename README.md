@@ -12,7 +12,7 @@ Copies above file into a file with the name `meeting-11-12.org`, given today is 
 
 ## Todo
 
-- [ ] Increment based duplication rules
+- [x] Increment based duplication rules
 - [ ] Improved UX
   - [ ] Help to print duplication rules
   - [ ] Early exit options in multi-file duplications

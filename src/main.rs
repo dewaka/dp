@@ -1,6 +1,8 @@
-mod lib;
+mod dp;
 
-use lib::{DateRule, Duplicator, IncrementRule, LocalFileSystem, Rule};
+use dp::rules::{DateRule, IncrementRule, Rule};
+use dp::vfs::LocalFileSystem;
+use dp::Duplicator;
 
 fn duplicate_files(files: &[String]) {
     // Dash (-) separated dates
@@ -13,10 +15,17 @@ fn duplicate_files(files: &[String]) {
     // Increment rule
     let inc_rule = IncrementRule::new();
 
-    let rules: Vec<&dyn Rule> = vec![&r1, &r2, &r3, &r4, &inc_rule];
-    let mut fs = LocalFileSystem::new();
+    let rules: Vec<Box<dyn Rule>> = vec![
+        Box::new(r1),
+        Box::new(r2),
+        Box::new(r3),
+        Box::new(r4),
+        Box::new(inc_rule),
+    ];
 
-    let mut duplicator = Duplicator::new(rules, &mut fs);
+    let fs = Box::new(LocalFileSystem::new());
+
+    let mut duplicator = Duplicator::new(rules, fs);
 
     for file in files.iter() {
         if !duplicator.duplicate(&file) {
