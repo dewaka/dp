@@ -25,7 +25,7 @@ fn duplicate_files(files: &[String]) {
 
     let fs = Box::new(LocalFileSystem::new());
 
-    let mut duplicator = Duplicator::new(rules, fs);
+    let mut duplicator = Duplicator::new(rules, fs, false);
 
     for file in files.iter() {
         if !duplicator.duplicate(&file) {

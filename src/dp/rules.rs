@@ -89,9 +89,8 @@ impl Rule for IncrementRule {
 
 #[cfg(test)]
 pub mod test {
-    use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-
     use super::*;
+    use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
     fn local_date(year: i32, month: u32, date: u32) -> DpDateTime {
         NaiveDateTime::new(
@@ -100,9 +99,10 @@ pub mod test {
         )
     }
 
-    pub fn date_rule(regex: &str, date_fmt: &str) -> DateRule {
+    pub fn default_test_date_rule(regex: &str, date_fmt: &str) -> DateRule {
         DateRule::compile(regex, date_fmt, test_local_date())
     }
+
     fn test_local_date() -> DpDateTime {
         local_date(2019, 11, 10)
     }
@@ -110,20 +110,23 @@ pub mod test {
     #[test]
     fn test_date_rule() {
         assert_eq!(
-            date_rule(r"\d{2}-\d{2}", "%m-%d").apply("hello-10-23.org"),
+            default_test_date_rule(r"\d{2}-\d{2}", "%m-%d").apply("hello-10-23.org"),
             Some("hello-11-10.org".to_string())
         );
 
         assert_eq!(
-            date_rule(r"\d{2}", "%d").apply("hello-23.org"),
+            default_test_date_rule(r"\d{2}", "%d").apply("hello-23.org"),
             Some("hello-10.org".to_string())
         );
 
         assert_eq!(
-            date_rule(r"\d{2}-\d{2}", "%m-%d").apply("hello-there.org"),
+            default_test_date_rule(r"\d{2}-\d{2}", "%m-%d").apply("hello-there.org"),
             None
         );
-        assert_eq!(date_rule(r"\d{2}", "%d").apply("hello-XY.org"), None);
+        assert_eq!(
+            default_test_date_rule(r"\d{2}", "%d").apply("hello-XY.org"),
+            None
+        );
     }
 
     #[test]

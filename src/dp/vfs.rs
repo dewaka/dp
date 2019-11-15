@@ -14,6 +14,9 @@ pub trait Vfs {
 
     /// Parent portion of a given path
     fn parent(&self, path: &str) -> String;
+
+    #[cfg(test)]
+    fn get_files(&self) -> Vec<String>;
 }
 
 /// Local file system Vfs
@@ -43,6 +46,11 @@ impl Vfs for LocalFileSystem {
     fn parent(&self, path: &str) -> String {
         let path = Path::new(path);
         path.parent().unwrap().to_str().unwrap().to_string()
+    }
+
+    #[cfg(test)]
+    fn get_files(&self) -> Vec<String> {
+        vec![]
     }
 }
 
@@ -93,6 +101,11 @@ pub mod test {
             } else {
                 format!("")
             }
+        }
+
+        #[cfg(test)]
+        fn get_files(&self) -> Vec<String> {
+            self.files.iter().map(|s| s.clone()).collect()
         }
     }
 
