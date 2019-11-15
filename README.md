@@ -15,7 +15,7 @@ Copies above file into a file with the name `meeting-11-12.org`, given today is 
 - [x] Increment based duplication rules
 - [ ] Improved UX
   - [ ] Help to print duplication rules
-  - [ ] Early exit options in multi-file duplications
+  - [x] Early exit options in multi-file duplications
 - [ ] Robust error handling
 - [ ] Tighter date rules which can catch invalid date, month, etc. values
 - [ ] Configurable rules(?)

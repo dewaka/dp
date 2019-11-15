@@ -1,10 +1,12 @@
 mod dp;
 
+use clap::{App, Arg};
 use dp::rules::{DateRule, IncrementRule, Rule};
 use dp::vfs::LocalFileSystem;
 use dp::Duplicator;
+use log::error;
 
-fn duplicate_files(files: &[String]) {
+fn duplicate_files(files: &[&str], print_rules: bool) {
     // Dash (-) separated dates
     let r1 = DateRule::compile_now(r"\d{2}-\d{2}", "%m-%d");
     let r2 = DateRule::compile_now(r"\d{4}-\d{2}-\d{2}", "%y-%m-%d");
@@ -27,25 +29,52 @@ fn duplicate_files(files: &[String]) {
 
     let mut duplicator = Duplicator::new(rules, fs, false);
 
-    for file in files.iter() {
-        if !duplicator.duplicate(&file) {
-            println!("Error - file duplication failed for: {}", file);
+    if print_rules {
+        duplicator.print_help();
+    } else {
+        for file in files.iter() {
+            if !duplicator.duplicate(&file) {
+                error!("File duplication failed for: {}", file);
+            }
         }
     }
 }
 
-fn print_usage() {
-    println!("dp -- duplicate files");
-    println!("dp <file> ...");
-}
-
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
+    let matches = App::new("dp - file duplicator")
+        .version("0.1")
+        .author("Chathura Colombage <dcdewaka@gmail.com>")
+        .about("Duplicates files")
+        .arg(
+            Arg::with_name("input")
+                .help("Sets the input file to use")
+                .multiple(true)
+                .required(true)
+                .index(1),
+        )
+        .arg(
+            Arg::with_name("rules")
+                .short("r")
+                .help("Print duplication rules")
+                .multiple(false),
+        )
+        .arg(
+            Arg::with_name("verbosity")
+                .short("v")
+                .multiple(true)
+                .help("Increase message verbosity"),
+        )
+        .get_matches();
 
-    if args.len() > 1 {
-        duplicate_files(&args[1..])
-    } else {
-        print_usage();
-        std::process::exit(1);
-    }
+    let verbosity = matches.occurrences_of("verbosity") as usize;
+    let inputs: Vec<_> = matches.values_of("input").unwrap().collect();
+
+    stderrlog::new()
+        .module(module_path!())
+        .verbosity(verbosity)
+        .init()
+        .unwrap();
+
+    let print_rules = matches.is_present("rules");
+    duplicate_files(&inputs, print_rules);
 }

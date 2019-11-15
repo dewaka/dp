@@ -1,6 +1,7 @@
 pub mod rules;
 pub mod vfs;
 
+use log::warn;
 use rules::Rule;
 use vfs::Vfs;
 
@@ -27,6 +28,8 @@ impl Duplicator {
 
             if let Some(ref renamed) = rule.apply(file) {
                 if self.vfs.exists(&renamed) {
+                    warn!("Renamed file already exists: {}", renamed);
+
                     if self.fallthrough {
                         return self.duplicate_with_rules(i + 1, renamed);
                     } else {
@@ -43,6 +46,13 @@ impl Duplicator {
 
     pub fn duplicate(&mut self, file: &str) -> bool {
         self.duplicate_with_rules(0, file)
+    }
+
+    pub fn print_help(&self) {
+        println!("=== Rules ===");
+        for rule in &self.rules {
+            rule.print()
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 use chrono::{NaiveDateTime, Utc};
+use log::debug;
 use regex::Captures;
 use regex::Regex;
 
@@ -10,9 +11,11 @@ fn current_local_date_time() -> DpDateTime {
 
 pub trait Rule {
     fn apply(&self, input: &str) -> Option<String>;
+    fn print(&self);
 }
 
 /// A rule for renaming files based on dates
+#[derive(Debug)]
 pub struct DateRule {
     regex: Regex,
     date_fmt: String,
@@ -42,6 +45,8 @@ impl DateRule {
 impl Rule for DateRule {
     fn apply(&self, input: &str) -> Option<String> {
         if self.regex.is_match(input) {
+            debug!("DateRule input: {} matched regex: {}", input, self.regex);
+
             let new_date = self.now.format(&self.date_fmt).to_string();
             let replaced = self.regex.replace_all(input, |caps: &Captures| {
                 format!("{}{}{}", &caps[1], new_date, &caps[3])
@@ -52,10 +57,15 @@ impl Rule for DateRule {
             None
         }
     }
+
+    fn print(&self) {
+        println!("{:?}", self);
+    }
 }
 
 /// IncrementRule for rewriting a file
 /// - rename foo.txt to foo1.txt
+#[derive(Debug)]
 pub struct IncrementRule {}
 
 impl IncrementRule {
@@ -74,6 +84,8 @@ impl Rule for IncrementRule {
         let regex = Regex::new(r"(.*)(\d+)(.*)").unwrap();
 
         if regex.is_match(input) {
+            debug!("IncrementRule input: {} matched regex: {}", input, regex);
+
             Some(
                 regex
                     .replace_all(input, |caps: &Captures| {
@@ -84,6 +96,10 @@ impl Rule for IncrementRule {
         } else {
             None
         }
+    }
+
+    fn print(&self) {
+        println!("{:?}", self);
     }
 }
 
