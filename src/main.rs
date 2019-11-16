@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 mod dp;
 
 use clap::{App, Arg};
@@ -6,7 +9,7 @@ use dp::vfs::LocalFileSystem;
 use dp::Duplicator;
 use log::error;
 
-fn duplicate_files(files: &[&str], print_rules: bool) {
+fn duplicate_files(files: &[&str], fallthrough: bool, print_rules: bool) {
     // Dash (-) separated dates
     let r1 = DateRule::compile_now(r"\d{2}-\d{2}", "%m-%d");
     let r2 = DateRule::compile_now(r"\d{4}-\d{2}-\d{2}", "%y-%m-%d");
@@ -27,7 +30,7 @@ fn duplicate_files(files: &[&str], print_rules: bool) {
 
     let fs = Box::new(LocalFileSystem::new());
 
-    let mut duplicator = Duplicator::new(rules, fs, false);
+    let mut duplicator = Duplicator::new(rules, fs, fallthrough);
 
     if print_rules {
         duplicator.print_help();
@@ -53,6 +56,12 @@ fn main() {
                 .index(1),
         )
         .arg(
+            Arg::with_name("fallthrough")
+                .short("f")
+                .help("Fallthrough renaming patterns when a matched renaming rule fails")
+                .multiple(false),
+        )
+        .arg(
             Arg::with_name("rules")
                 .short("r")
                 .help("Print duplication rules")
@@ -67,7 +76,9 @@ fn main() {
         .get_matches();
 
     let verbosity = matches.occurrences_of("verbosity") as usize;
+    let fallthrough = matches.is_present("fallthrough");
     let inputs: Vec<_> = matches.values_of("input").unwrap().collect();
+    let print_rules = matches.is_present("rules");
 
     stderrlog::new()
         .module(module_path!())
@@ -75,6 +86,5 @@ fn main() {
         .init()
         .unwrap();
 
-    let print_rules = matches.is_present("rules");
-    duplicate_files(&inputs, print_rules);
+    duplicate_files(&inputs, fallthrough, print_rules);
 }

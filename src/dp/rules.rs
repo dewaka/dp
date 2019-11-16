@@ -79,15 +79,17 @@ impl IncrementRule {
     }
 }
 
+lazy_static! {
+    static ref INCREMENT_RULE_REGEX: Regex = Regex::new(r"(.*)(\d+)(.*)").unwrap();
+}
+
 impl Rule for IncrementRule {
     fn apply(&self, input: &str) -> Option<String> {
-        let regex = Regex::new(r"(.*)(\d+)(.*)").unwrap();
-
-        if regex.is_match(input) {
-            debug!("IncrementRule input: {} matched regex: {}", input, regex);
+        if INCREMENT_RULE_REGEX.is_match(input) {
+            debug!("IncrementRule input: {} matched regex: (.*)(\\d+)(.*)", input);
 
             Some(
-                regex
+                INCREMENT_RULE_REGEX
                     .replace_all(input, |caps: &Captures| {
                         format!("{}{}{}", &caps[1], Self::increment(&caps[2]), &caps[3])
                     })
