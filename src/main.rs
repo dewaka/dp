@@ -9,13 +9,15 @@ use dp::vfs::LocalFileSystem;
 use dp::Duplicator;
 use log::error;
 
-fn duplicate_files(files: &[&str], fallthrough: bool, print_rules: bool) {
+fn get_duplicator(fallthrough: bool) -> Duplicator {
+    let now = dp::rules::current_local_date_time();
+
     // Dash (-) separated dates
-    let r1 = DateRule::compile_now(r"\d{2}-\d{2}", "%m-%d");
-    let r2 = DateRule::compile_now(r"\d{4}-\d{2}-\d{2}", "%y-%m-%d");
+    let r1 = DateRule::compile(r"\d{2}-\d{2}", "%m-%d", now);
+    let r2 = DateRule::compile(r"\d{4}-\d{2}-\d{2}", "%y-%m-%d", now);
     // Dash (_) separated dates
-    let r3 = DateRule::compile_now(r"\d{2}_\d{2}", "%m_%d");
-    let r4 = DateRule::compile_now(r"\d{4}_\d{2}_\d{2}", "%y_%m_%d");
+    let r3 = DateRule::compile(r"\d{2}_\d{2}", "%m_%d", now);
+    let r4 = DateRule::compile(r"\d{4}_\d{2}_\d{2}", "%y_%m_%d", now);
 
     // Increment rule
     let inc_rule = IncrementRule::new();
@@ -30,7 +32,11 @@ fn duplicate_files(files: &[&str], fallthrough: bool, print_rules: bool) {
 
     let fs = Box::new(LocalFileSystem::new());
 
-    let mut duplicator = Duplicator::new(rules, fs, fallthrough);
+    Duplicator::new(rules, fs, fallthrough)
+}
+
+fn duplicate_files(files: &[&str], fallthrough: bool, print_rules: bool) {
+    let mut duplicator = get_duplicator(fallthrough);
 
     if print_rules {
         duplicator.print_help();

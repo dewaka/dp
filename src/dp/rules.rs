@@ -5,7 +5,7 @@ use regex::Regex;
 
 type DpDateTime = NaiveDateTime;
 
-fn current_local_date_time() -> DpDateTime {
+pub fn current_local_date_time() -> DpDateTime {
     Utc::now().naive_utc()
 }
 
@@ -37,6 +37,7 @@ impl DateRule {
         Self::new(regex, date_fmt, now)
     }
 
+    #[allow(dead_code)]
     pub fn compile_now(pattern: &str, date_fmt: &str) -> Self {
         Self::compile(pattern, date_fmt, current_local_date_time())
     }
@@ -86,7 +87,10 @@ lazy_static! {
 impl Rule for IncrementRule {
     fn apply(&self, input: &str) -> Option<String> {
         if INCREMENT_RULE_REGEX.is_match(input) {
-            debug!("IncrementRule input: {} matched regex: (.*)(\\d+)(.*)", input);
+            debug!(
+                "IncrementRule input: {} matched regex: (.*)(\\d+)(.*)",
+                input
+            );
 
             Some(
                 INCREMENT_RULE_REGEX
