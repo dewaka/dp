@@ -3,11 +3,11 @@ extern crate lazy_static;
 
 mod dp;
 
-use clap::{App, Arg};
 use dp::rules::{DateRule, IncrementRule, Rule};
 use dp::vfs::LocalFileSystem;
 use dp::Duplicator;
 use log::error;
+use structopt::StructOpt;
 
 fn get_duplicator(fallthrough: bool) -> Duplicator {
     let now = dp::rules::current_local_date_time();
@@ -35,62 +35,55 @@ fn get_duplicator(fallthrough: bool) -> Duplicator {
     Duplicator::new(rules, fs, fallthrough)
 }
 
-fn duplicate_files(files: &[&str], fallthrough: bool, print_rules: bool) {
+fn duplicate_files<T: AsRef<str>>(files: &[T], fallthrough: bool, print_rules: bool) {
     let mut duplicator = get_duplicator(fallthrough);
 
     if print_rules {
         duplicator.print_help();
     } else {
         for file in files.iter() {
-            if !duplicator.duplicate(&file) {
-                error!("File duplication failed for: {}", file);
+            if !duplicator.duplicate(file.as_ref()) {
+                error!("File duplication failed for: {}", file.as_ref());
             }
         }
     }
 }
 
-fn main() {
-    let matches = App::new("dp - file duplicator")
-        .version("0.1")
-        .author("Chathura Colombage <dcdewaka@gmail.com>")
-        .about("Duplicates files")
-        .arg(
-            Arg::with_name("input")
-                .help("Sets the input file to use")
-                .multiple(true)
-                .required(true)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("fallthrough")
-                .short("f")
-                .help("Fallthrough renaming patterns when a matched renaming rule fails")
-                .multiple(false),
-        )
-        .arg(
-            Arg::with_name("rules")
-                .short("r")
-                .help("Print duplication rules")
-                .multiple(false),
-        )
-        .arg(
-            Arg::with_name("verbosity")
-                .short("v")
-                .multiple(true)
-                .help("Increase message verbosity"),
-        )
-        .get_matches();
+#[derive(Debug, StructOpt)]
+#[structopt(
+    name = "dp - file duplicator",
+    about = "Duplicates files",
+    author = "Chathura Colombage <dcdewaka@gmail.com>"
+)]
+struct Opt {
+    /// Optional argument to print rules
+    #[structopt(long = "rules", short = "r", help = "Printing renaming rules")]
+    rules: bool,
 
-    let verbosity = matches.occurrences_of("verbosity") as usize;
-    let fallthrough = matches.is_present("fallthrough");
-    let inputs: Vec<_> = matches.values_of("input").unwrap().collect();
-    let print_rules = matches.is_present("rules");
+    /// Optional argument for fallthrough of renaming rules
+    #[structopt(
+        long = "fallthrough",
+        short = "f",
+        help = "Fallthrough renaming patterns when a matched renaming rule fails"
+    )]
+    fallthrough: bool,
+
+    /// Files to duplicate
+    files: Vec<String>,
+
+    /// Controls the log verbosity
+    #[structopt(short = "v", parse(from_occurrences))]
+    verbosity: usize,
+}
+
+fn main() {
+    let opt: Opt = Opt::from_args();
 
     stderrlog::new()
         .module(module_path!())
-        .verbosity(verbosity)
+        .verbosity(opt.verbosity)
         .init()
         .unwrap();
 
-    duplicate_files(&inputs, fallthrough, print_rules);
+    duplicate_files(&opt.files, opt.fallthrough, opt.rules);
 }
